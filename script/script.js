@@ -1,20 +1,42 @@
 let board = null;
 const game = new Chess();
+let whiteSquareHighlight = "#a9a9a9";
+let blackSquareHighlight = "#696969";
 
-// const chess = new Chess();
+const removeHighlights = function() {
+  $("#board .square-55d63").css("background", "");
+};
 
-// while (!chess.game_over()) {
-//   const moves = chess.moves();
-//   const move = moves[Math.floor(Math.random() * moves.length)];
-//   chess.move(move);
-// }
-// console.log(chess.pgn());
+const highlightPossibleMoves = function(square) {
+  // this selects all the available squares
+  const allSquares = $("#board .square-" + square);
+  let background = whiteSquareHighlight;
 
-var onDrop = function(source, target) {
-  var move = game.move({
+  if (allSquares.hasClass("black-3c85d") === true) {
+    background = blackSquareHighlight;
+  }
+
+  allSquares.css("background", background);
+};
+
+const onDragStart = function(source, piece) {
+  // do not pick up pieces if the game is over
+  if (game.game_over()) return false;
+
+  // or if it's not that side's turn
+  if (
+    (game.turn() === "w" && piece.search(/^b/) !== -1) ||
+    (game.turn() === "b" && piece.search(/^w/) !== -1)
+  ) {
+    return false;
+  }
+};
+
+const onDrop = function(source, target) {
+  let move = game.move({
     from: source,
     to: target,
-    promotion: "q" // why do you need a promotion
+    promotion: "q" // only promotes to queen for pawns
   });
 
   removeHighlights();
@@ -23,9 +45,6 @@ var onDrop = function(source, target) {
   }
 };
 
-var onSnapEnd = function() {
-  board.position(game.fen()); // when the snap end refresh board 
-};
 
 // this creates the hover effect
 // Returns a list of legal moves from the current position. The function takes an optional parameter which controls the single-square move generation and verbosity.
@@ -51,28 +70,16 @@ const onMouseoutSquare = function(square, piece) {
   removeHighlights(); // fires when mouse leaves square
 };
 
-const removeHighlights = function() {
-  $("#board .square-55d63").css("background", "");
-};
-
-const highlightPossibleMoves = function(square) {
-  // this selects all the available squares
-  const squareEl = $("#board .square-" + square);
-
-  const background = "#a9a9a9"; // default color
-
-  // QUESTION: Why did he select all the moves with black colors a a class, when we are trying to show possible moves for white pieces.
-  if (squareEl.hasClass("black-3c85d") === true) {
-    background = "#696969";
-  }
-
-  squareEl.css("background", background);
-};
 // end of hover effect
+
+const onSnapEnd = function() {
+  board.position(game.fen()); // when the snap end refresh board
+};
 
 const config = {
   position: "start",
   draggable: true,
+  onDragStart: onDragStart, // Fires when a piece is picked up.
   onDrop: onDrop, // Fires when a piece is dropped.
   onSnapEnd: onSnapEnd, // Fires when the piece "snap" animation is complete.
   onMouseoverSquare: onMouseoverSquare, // Fires when the mouse leaves a square.
